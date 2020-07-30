@@ -153,12 +153,18 @@ def get_fetcher(type="S3", location=None, local_filename=None):
     return _fetcher_types[type](location, local_filename)
 
 
-def fetch_file(location_type, location, sha1):
+def fetch_file(location_type, location, sha1, retry=True):
     filename = filename_from_link(location)
     fetcher = get_fetcher(type=location_type, location=location,
                           local_filename=filename)
     local_path = fetcher.fetch()
-    verify_sha1(local_path, sha1)
+    try:
+        verify_sha1(local_path, sha1)
+    except Exception as e:
+        if retry and os.path.isfile(local_path) and 'brainio' in local_path:
+            os.remove(local_path)
+        else:
+            raise e
     return local_path
 
 
